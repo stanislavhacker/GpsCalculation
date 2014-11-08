@@ -82,28 +82,6 @@ namespace GpsCalculation
         }
 
         /// <summary>
-        /// Speed btween two points
-        /// </summary>
-        /// <param name="position"></param>
-        /// <returns>Speed</returns>
-        public double speedTo(GeoPosition position)
-        {
-            TimeSpan sub = position.Date.Subtract(this.position.Date);
-            Double hours = sub.TotalHours;
-            Double km = this.distanceTo(position);
-
-            if (hours == 0)
-            {
-                return 0;
-            }
-
-            Double multiplier = 1 / hours;
-            Double kmh = km * multiplier;
-
-            return kmh;
-        }
-
-        /// <summary>
         /// Zoom to
         /// </summary>
         /// <param name="position"></param>
@@ -120,6 +98,57 @@ namespace GpsCalculation
               angle += 360;
             }
             return Math.Round(Math.Log(width * 360 / angle / GLOBE_WIDTH) / Math.Log(2, Math.E));
+        }
+
+        /// <summary>
+        /// Is position accured
+        /// </summary>
+        /// <param name="geoCoordinate"></param>
+        /// <param name="accuracy"></param>
+        /// <returns></returns>
+        private bool isPositionAccured(GeoPosition geoCoordinate, double accuracy)
+        {
+            return geoCoordinate.Accuracy <= accuracy;
+        }
+
+
+
+        /// <summary>
+        /// Speed btween two points
+        /// </summary>
+        /// <param name="positions"></param>
+        /// <returns>Speed</returns>
+        public static double SpeedTo(List<GeoPosition> positions, double accuracy = 20)
+        {
+            //distance init
+            var km = 0.0;
+            //time init
+            var hours = 0.0;
+            //geo
+            Geo geo;
+
+            for (var i = 0; i < positions.Count - 2; i++)
+            {
+                //save
+                var first = positions[i];
+                var second = positions[i + 1];
+                //geo
+                geo = new Geo(first);
+                //calculate data
+                TimeSpan sub = second.Date.Subtract(first.Date);
+                hours += sub.TotalHours;
+                km += geo.distanceTo(second);
+            }
+
+            if (hours == 0)
+            {
+                return 0;
+            }
+            //calculate
+            Double multiplier = 1 / hours;
+            Double kmh = km * multiplier;
+            //return
+            return kmh;
         }
     }
 }
