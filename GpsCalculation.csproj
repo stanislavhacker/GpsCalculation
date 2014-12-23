@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Geo.cs" />
+    <Compile Include="GeoCircle.cs" />
     <Compile Include="GeoMath.cs" />
     <Compile Include="GeoPosition.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

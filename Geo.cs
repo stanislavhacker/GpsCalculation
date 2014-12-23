@@ -150,5 +150,135 @@ namespace GpsCalculation
             //return
             return kmh;
         }
+
+        /// <summary>
+        /// Are circles similar
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="positions"></param>
+        /// <returns></returns>
+        public static double CirclesAreSimilar(List<GeoPosition> listA, List<GeoPosition> listB, double treshold = 0.02)
+        {
+            //CIRCLE
+            var circleA = Geo.GetCircle(listA);
+            var circleB = Geo.GetCircle(listB);
+            //return
+            return circleA.GetSimilarity(circleB, 0.02);
+        }
+
+        /// <summary>
+        /// Get circle
+        /// </summary>
+        /// <param name="positions"></param>
+        /// <returns></returns>
+        public static GeoCircle GetCircle(List<GeoPosition> positions)
+        {
+            var startGeo = new Geo(positions[0]);
+            var returning = false;
+            var distance = 0.0;
+            var treshold = 0.02;
+
+            //data
+            double x = 0;
+            double y = 0;
+            double z = 0;
+            double latitude = 0.0;
+            double longitude = 0.0;
+
+            //circle
+            GeoCircle circle = new GeoCircle();
+            circle.Positions = new List<GeoPosition>();
+            circle.Length = 0;
+            circle.Center = null;
+
+            //get circle
+            for (var i = 0; i < positions.Count; i++)
+            {
+                var geo = new Geo(positions[i]);
+
+                //add
+                circle.Positions.Add(positions[i]);
+                //length
+                circle.Length += (i < positions.Count - 1) ? geo.distanceTo(positions[i + 1]) : 0;
+
+                //center
+                latitude = positions[i].Latitude * Math.PI / 180;
+                longitude = positions[i].Longitude * Math.PI / 180;
+                //center - calculates
+                x += Math.Cos(latitude) * Math.Cos(longitude);
+                y += Math.Cos(latitude) * Math.Sin(longitude);
+                z += Math.Sin(latitude);
+
+                //distance
+                distance = startGeo.distanceTo(positions[i]);
+                //returning
+                returning = returning || distance > 0.1;
+                //check lap
+                if (returning && distance <= treshold)
+                {
+                    break;
+                }
+            }
+
+            //center
+            if (circle.Positions.Count > 1)
+            {
+                x = x / circle.Positions.Count;
+                y = y / circle.Positions.Count;
+                z = z / circle.Positions.Count;
+
+                var centralLongitude = Math.Atan2(y, x);
+                var centralSquareRoot = Math.Sqrt(x * x + y * y);
+                var centralLatitude = Math.Atan2(z, centralSquareRoot);
+
+                circle.Center = new GeoPosition(centralLatitude * 180 / Math.PI, centralLongitude * 180 / Math.PI, 0);
+            }
+            else
+            {
+                circle.Center = circle.Positions[0];
+            }
+
+            return circle;
+        }
+
+        /// <summary>
+        /// Get nearest point
+        /// </summary>
+        /// <param name="point"></param>
+        /// <param name="positions"></param>
+        /// <param name="current"></param>
+        /// <param name="start"></param>
+        /// <returns></returns>
+        public static Double GetNearest(GeoPosition point, List<GeoPosition> positions, out int current, int start = 0)
+        {
+            Double distance = Double.MaxValue;
+            int max = positions.Count;
+            Geo geo = new Geo(point);
+            for (var i = start; i < max; i++)
+            {
+                var d = geo.distanceTo(positions[i]);
+                //next distance is bigger
+                if (d > distance)
+                {
+                    current = i - 1;
+                    return distance;
+                }
+                //distance is smaller
+                if (d < distance)
+                {
+                    distance = d;
+                }
+                //reset
+                if (start > 0 && i == positions.Count - 1)
+                {
+                    start = 0;
+                    i = 0;
+                    max = start;
+                }
+            }
+            //not found
+            current = 0;
+            return distance;
+        }
     }
 }
